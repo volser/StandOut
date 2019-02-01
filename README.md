@@ -25,7 +25,7 @@ allprojects {
 ```
 ```
 dependencies {
-    implementation ('com.github.andob:StandOut:1.0.0') {
+    implementation ('com.github.andob:StandOut:1.0.1') {
         exclude group: 'com.android.support'
     }
 }
