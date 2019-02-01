@@ -1,5 +1,5 @@
-## This is a fork of the StandOut library circa 2012-2013
-## With this library, you can create apps with floating windows (eg: similar to [FloatingCalculator](https://play.google.com/store/apps/details?id=com.aptapps.floatingcalculator) or Facebook Messenger's "chat heads"
+## This is a fork of the StandOut library from 2012-2013
+### With this library, you can create android apps with floating windows (eg: similar to [FloatingCalculator](https://play.google.com/store/apps/details?id=com.aptapps.floatingcalculator) or Facebook Messenger's "chat heads"
 
 What I've modified:
 
@@ -12,7 +12,7 @@ Tested on Android Marshmallow. Works just fine! :)
 
 If Android version is >= M, on app startup you should ask the user for gaining ``SYSTEM_ALERT_WINDOW`` permission.
 
-For more info, see the ``sample``.
+For more info, please study the ``sample``.
 
 ### Import
 

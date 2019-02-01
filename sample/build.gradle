@@ -18,6 +18,9 @@ android {
 }
 
 dependencies {
-    implementation project(":standout")
     implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation project(":standout")
+//    implementation ('com.github.andob:StandOut:1.0.0') {
+//        exclude group: 'com.android.support'
+//    }
 }
