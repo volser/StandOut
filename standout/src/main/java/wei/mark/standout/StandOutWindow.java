@@ -1,6 +1,7 @@
 package wei.mark.standout;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -21,8 +22,11 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.JobIntentService;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -35,9 +39,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -52,7 +53,10 @@ import android.widget.TextView;
  *         Contributors: Jason <github.com/jasonconnery>
  * 
  */
-public abstract class StandOutWindow extends Service {
+public abstract class StandOutWindow extends JobIntentService
+{
+	public static Handler uiThreadRunner;
+
 	static final String TAG = "StandOutWindow";
 
 	/**
@@ -123,7 +127,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static void show(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		context.startService(getShowIntent(context, cls, id));
+//		context.startService(getShowIntent(context, cls, id));
+		enqueueWork(context, cls, 9001, getShowIntent(context, cls, id));
 	}
 
 	/**
@@ -143,7 +148,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static void hide(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		context.startService(getHideIntent(context, cls, id));
+//		context.startService(getHideIntent(context, cls, id));
+		enqueueWork(context, cls, 9001, getHideIntent(context, cls, id));
 	}
 
 	/**
@@ -161,7 +167,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static void close(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		context.startService(getCloseIntent(context, cls, id));
+//		context.startService(getCloseIntent(context, cls, id));
+		enqueueWork(context, cls, 9001, getHideIntent(context, cls, id));
 	}
 
 	/**
@@ -176,7 +183,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static void closeAll(Context context,
 			Class<? extends StandOutWindow> cls) {
-		context.startService(getCloseAllIntent(context, cls));
+//		context.startService(getCloseAllIntent(context, cls));
+		enqueueWork(context, cls, 9001, getCloseAllIntent(context, cls));
 	}
 
 	/**
@@ -212,8 +220,9 @@ public abstract class StandOutWindow extends Service {
 	public static void sendData(Context context,
 			Class<? extends StandOutWindow> toCls, int toId, int requestCode,
 			Bundle data, Class<? extends StandOutWindow> fromCls, int fromId) {
-		context.startService(getSendDataIntent(context, toCls, toId,
-				requestCode, data, fromCls, fromId));
+		Intent intent=getSendDataIntent(context, toCls, toId, requestCode, data, fromCls, fromId);
+//		context.startService(intent);
+		enqueueWork(context, toCls, 9001, intent);
 	}
 
 	/**
@@ -352,10 +361,7 @@ public abstract class StandOutWindow extends Service {
 	// internal state variables
 	private boolean startedForeground;
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		return null;
-	}
+
 
 	@Override
 	public void onCreate() {
@@ -369,9 +375,20 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		super.onStartCommand(intent, flags, startId);
+	protected void onHandleWork(final Intent intent)
+    {
+        uiThreadRunner.post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                onHandleWorkOnUiThread(intent);
+            }
+        });
+    }
 
+    protected void onHandleWorkOnUiThread(Intent intent)
+	{
 		// intent should be created with
 		// getShowIntent(), getHideIntent(), getCloseIntent()
 		if (intent != null) {
@@ -408,18 +425,19 @@ public abstract class StandOutWindow extends Service {
 		} else {
 			Log.w(TAG, "Tried to onStartCommand() with a null intent.");
 		}
-
-		// the service is started in foreground in show()
-		// so we don't expect Android to kill this service
-		return START_NOT_STICKY;
 	}
 
+	/**
+	 * Deprecated for Android >= Oreo
+	 */
 	@Override
+	@Deprecated
 	public void onDestroy() {
 		super.onDestroy();
 
 		// closes all windows
-		closeAll();
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+			closeAll();
 	}
 
 	/**
@@ -625,12 +643,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
-	public void setupNotificationChannel(Context context)
+	public void setupNotificationChannel()
 	{
 		NotificationChannel channel=new NotificationChannel(getNotificationChannelId(), getNotificationChannelName(), NotificationManager.IMPORTANCE_NONE);
 		channel.setLightColor(Color.BLUE);
 		channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-		NotificationManager manager=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+		NotificationManager manager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 		manager.createNotificationChannel(channel);
 	}
 
@@ -660,7 +678,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public Notification getPersistentNotification(int id) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			setupNotificationChannel(this);
+			setupNotificationChannel();
 
 		// basic notification stuff
 		// http://developer.android.com/guide/topics/ui/notifiers/notifications.html
@@ -716,7 +734,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public Notification getHiddenNotification(int id) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			setupNotificationChannel(this);
+			setupNotificationChannel();
 
 		// same basics as getPersistentNotification()
 		int icon = getHiddenIcon();
@@ -748,42 +766,6 @@ public abstract class StandOutWindow extends Service {
 				.setContentText(contentText)
 				.setAutoCancel(false)
 				.build();
-	}
-
-	/**
-	 * Return the animation to play when the window corresponding to the id is
-	 * shown.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 * @return The animation to play or null.
-	 */
-	public Animation getShowAnimation(int id) {
-		return AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-	}
-
-	/**
-	 * Return the animation to play when the window corresponding to the id is
-	 * hidden.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 * @return The animation to play or null.
-	 */
-	public Animation getHideAnimation(int id) {
-		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
-	}
-
-	/**
-	 * Return the animation to play when the window corresponding to the id is
-	 * closed.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 * @return The animation to play or null.
-	 */
-	public Animation getCloseAnimation(int id) {
-		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
 	}
 
 	/**
@@ -1138,23 +1120,11 @@ public abstract class StandOutWindow extends Service {
 
 		window.visibility = Window.VISIBILITY_VISIBLE;
 
-		// get animation
-		Animation animation = getShowAnimation(id);
-
 		// get the params corresponding to the id
 		StandOutLayoutParams params = window.getLayoutParams();
 
-		try {
-			// add the view to the window manager
-			mWindowManager.addView(window, params);
-
-			// animate
-			if (animation != null) {
-				window.getChildAt(0).startAnimation(animation);
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		// add the view to the window manager
+		mWindowManager.addView(window, params);
 
 		// add view to internal map
 		sWindowCache.putCache(id, getClass(), window);
@@ -1226,40 +1196,12 @@ public abstract class StandOutWindow extends Service {
 		if (Utils.isSet(window.flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			window.visibility = Window.VISIBILITY_TRANSITION;
 
+			// remove the window from the window manager
+			mWindowManager.removeView(window);
+			window.visibility = Window.VISIBILITY_GONE;
+
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
-
-			// get animation
-			Animation animation = getHideAnimation(id);
-
-			try {
-				// animate
-				if (animation != null) {
-					animation.setAnimationListener(new AnimationListener() {
-
-						@Override
-						public void onAnimationStart(Animation animation) {
-						}
-
-						@Override
-						public void onAnimationRepeat(Animation animation) {
-						}
-
-						@Override
-						public void onAnimationEnd(Animation animation) {
-							// remove the window from the window manager
-							mWindowManager.removeView(window);
-							window.visibility = Window.VISIBILITY_GONE;
-						}
-					});
-					window.getChildAt(0).startAnimation(animation);
-				} else {
-					// remove the window from the window manager
-					mWindowManager.removeView(window);
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
 
 			// display the notification
 			notification.flags = notification.flags
@@ -1307,62 +1249,18 @@ public abstract class StandOutWindow extends Service {
 
 		window.visibility = Window.VISIBILITY_TRANSITION;
 
-		// get animation
-		Animation animation = getCloseAnimation(id);
+		// remove the window from the window manager
+		mWindowManager.removeView(window);
 
-		// remove window
-		try {
-			// animate
-			if (animation != null) {
-				animation.setAnimationListener(new AnimationListener() {
+		// remove view from internal map
+		sWindowCache.removeCache(id, getClass());
 
-					@Override
-					public void onAnimationStart(Animation animation) {
-					}
-
-					@Override
-					public void onAnimationRepeat(Animation animation) {
-					}
-
-					@Override
-					public void onAnimationEnd(Animation animation) {
-						// remove the window from the window manager
-						mWindowManager.removeView(window);
-						window.visibility = Window.VISIBILITY_GONE;
-
-						// remove view from internal map
-						sWindowCache.removeCache(id,
-								StandOutWindow.this.getClass());
-
-						// if we just released the last window, quit
-						if (getExistingIds().size() == 0) {
-							// tell Android to remove the persistent
-							// notification
-							// the Service will be shutdown by the system on low
-							// memory
-							startedForeground = false;
-							stopForeground(true);
-						}
-					}
-				});
-				window.getChildAt(0).startAnimation(animation);
-			} else {
-				// remove the window from the window manager
-				mWindowManager.removeView(window);
-
-				// remove view from internal map
-				sWindowCache.removeCache(id, getClass());
-
-				// if we just released the last window, quit
-				if (sWindowCache.getCacheSize(getClass()) == 0) {
-					// tell Android to remove the persistent notification
-					// the Service will be shutdown by the system on low memory
-					startedForeground = false;
-					stopForeground(true);
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		// if we just released the last window, quit
+		if (sWindowCache.getCacheSize(getClass()) == 0) {
+			// tell Android to remove the persistent notification
+			// the Service will be shutdown by the system on low memory
+			startedForeground = false;
+			stopForeground(true);
 		}
 	}
 
@@ -1856,8 +1754,9 @@ public abstract class StandOutWindow extends Service {
 		 *            The id of the window.
 		 */
 		public StandOutLayoutParams(int id) {
-			super(200, 200, TYPE_PHONE,
-					StandOutLayoutParams.FLAG_NOT_TOUCH_MODAL
+			super(200, 200,
+					Build.VERSION.SDK_INT >= Build.VERSION_CODES.O?TYPE_APPLICATION_OVERLAY:TYPE_PHONE,
+					   StandOutLayoutParams.FLAG_NOT_TOUCH_MODAL
 							| StandOutLayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 

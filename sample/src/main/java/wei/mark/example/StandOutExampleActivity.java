@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
@@ -60,17 +61,17 @@ public class StandOutExampleActivity extends AppCompatActivity
 
 	private void onPermissionGranted()
 	{
+		StandOutWindow.uiThreadRunner=new Handler(getMainLooper());
+
 		StandOutWindow.closeAll(this, SimpleWindow.class);
-		StandOutWindow.closeAll(this, MultiWindow.class);
-		StandOutWindow.closeAll(this, WidgetsWindow.class);
+//		StandOutWindow.closeAll(this, MultiWindow.class);
+//		StandOutWindow.closeAll(this, WidgetsWindow.class);
 
 		// show a MultiWindow, SimpleWindow
 
-		StandOutWindow
-				.show(this, SimpleWindow.class, StandOutWindow.DEFAULT_ID);
-		StandOutWindow.show(this, MultiWindow.class, StandOutWindow.DEFAULT_ID);
-		StandOutWindow.show(this, WidgetsWindow.class,
-				StandOutWindow.DEFAULT_ID);
+		StandOutWindow.show(StandOutExampleActivity.this, SimpleWindow.class,  1);
+//		StandOutWindow.show(StandOutExampleActivity.this, MultiWindow.class,   2);
+//		StandOutWindow.show(StandOutExampleActivity.this, WidgetsWindow.class, 3);
 
 		// show a MostBasicWindow. It is commented out because it does not
 		// support closing.
@@ -79,7 +80,5 @@ public class StandOutExampleActivity extends AppCompatActivity
 		 * StandOutWindow.show(this, StandOutMostBasicWindow.class,
 		 * StandOutWindow.DEFAULT_ID);
 		 */
-
-		finish();
 	}
 }

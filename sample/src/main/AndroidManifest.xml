@@ -4,6 +4,8 @@
     package="wei.mark.example">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:allowBackup="true"
@@ -23,10 +25,25 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".MultiWindow" />
-        <service android:name=".SimpleWindow" />
-        <service android:name=".MostBasicWindow" />
-        <service android:name="WidgetsWindow" />
+        <service
+            android:name=".MultiWindow"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <service
+            android:name=".SimpleWindow"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <service
+            android:name=".MostBasicWindow"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <service
+            android:name=".WidgetsWindow"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
 
     </application>
 

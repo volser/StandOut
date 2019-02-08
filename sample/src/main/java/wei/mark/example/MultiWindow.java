@@ -119,24 +119,6 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	public Animation getShowAnimation(int id) {
-		if (isExistingId(id)) {
-			// restore
-			return AnimationUtils.loadAnimation(this,
-					android.R.anim.slide_in_left);
-		} else {
-			// show
-			return super.getShowAnimation(id);
-		}
-	}
-
-	@Override
-	public Animation getHideAnimation(int id) {
-		return AnimationUtils.loadAnimation(this,
-				android.R.anim.slide_out_right);
-	}
-
-	@Override
 	public List<DropDownListItem> getDropDownItems(int id) {
 		List<DropDownListItem> items = new ArrayList<DropDownListItem>();
 		items.add(new DropDownListItem(android.R.drawable.ic_menu_help,

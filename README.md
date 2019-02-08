@@ -5,12 +5,13 @@ What I've modified:
 
 1. converted Eclipse ADT project to Android Studio Gradle project
 2. Replaced vanilla Notification code with AppCompat Notification code in the library module
-3. Added AppCompat code in sample module
-4. Published to jitpack
+3. Android >= Marshmallow permission asking compatibility
+4. Android >= Oreo foreground services compatibility
+5. Published to jitpack
 
 Tested on Android Marshmallow. Works just fine! :)
 
-If Android version is >= M, on app startup you should ask the user for gaining ``SYSTEM_ALERT_WINDOW`` permission.
+Kind of buggy on Android Pie :|
 
 For more info, please study the ``sample``.
 
@@ -25,7 +26,7 @@ allprojects {
 ```
 ```
 dependencies {
-    implementation ('com.github.andob:StandOut:1.0.2') {
+    implementation ('com.github.andob:StandOut:1.0.3') {
         exclude group: 'com.android.support'
     }
 }

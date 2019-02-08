@@ -6,5 +6,6 @@
     <string name="corner">Corner</string>
     <string name="maximize">Maximize</string>
     <string name="floating_window">Floating window</string>
+    <string name="stand_out">StandOut</string>
 
 </resources>
